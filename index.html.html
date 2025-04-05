@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Digital Detox Assistant</title>
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css"
+    />
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            margin-top: 20px; /* Reduced top margin */
+            margin-bottom: 20px; /* Reduced bottom margin */
+        }
+        h2 {
+            color: #28a745; /* Green theme */
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #555;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .form-group label {
+            font-weight: bold;
+            color: #333;
+        }
+        .btn-success {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+        }
+        #response {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        #response h3 {
+            color: #28a745;
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+        #response strong {
+            color: #007bff; /* Blue for emphasis */
+        }
+        #response ul {
+            padding-left: 20px;
+        }
+        #response li {
+            margin-bottom: 8px;
+        }
+        .suggested-questions {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background-color: #fefefe;
+        }
+        .suggested-questions h4 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+        .suggested-questions ul {
+            list-style: none;
+            padding-left: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .suggested-questions li {
+            margin-bottom: 0;
+        }
+        .suggested-questions button {
+            background-color: #f0f8ff; /* Light blue */
+            color: #007bff;
+            border: 1px solid #add8e6;
+            border-radius: 5px;
+            padding: 8px 12px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .suggested-questions button:hover {
+            background-color: #add8e6;
+            color: #fff;
+        }
+        footer {
+            text-align: center;
+            margin-top: auto;
+            padding: 20px;
+            color: #777;
+            font-size: 0.9em;
+        }
+        /* New styles for screen time features */
+        #screenTimeSection {
+            background-color: #e9ecef;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #screenTimeSection h3 {
+            color: #007bff;
+            margin-bottom: 15px;
+        }
+        #screenTimeDisplay {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+        #setLimitSection {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #setLimitSection label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        #setLimit {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 80px;
+        }
+        #setLimitBtn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-left: 10px;
+        }
+        #setLimitBtn:hover {
+            background-color: #0056b3;
+        }
+        #limitReminder {
+            margin-top: 10px;
+            color: #dc3545; /* Red for reminder */
+            font-weight: bold;
+        }
+        #weeklyChartCanvas {
+            margin-top: 20px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2><i class="fas fa-mobile-alt"></i> AI Digital Detox Assistant</h2>
+        <p>Helps users reduce screen time with tips and reminders.</p>
+
+        <div id="screenTimeSection">
+            <h3>Your Screen Time Today</h3>
+            <div id="screenTimeDisplay">0 minutes</div>
+            <div id="setLimitSection">
+                <label for="setLimit">Set Daily Limit (minutes):</label>
+                <input type="number" id="setLimit" min="15" value="60">
+                <button id="setLimitBtn">Set Limit</button>
+                <div id="limitReminder" style="display: none;">Time limit reached!</div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="userInput"><i class="fas fa-comment-dots"></i> Ask me anything:</label>
+            <textarea
+                class="form-control"
+                id="userInput"
+                rows="3"
+                placeholder="Ask me anything..."
+            ></textarea>
+        </div>
+        <button class="btn btn-success" onclick="sendMessage()">
+            <i class="fas fa-magic"></i> Get Response
+        </button>
+        <div id="response" class="mt-3"></div>
+
+        <div id="weeklyChartCanvas" style="display: none;">
+            <h3>Weekly Screen Time</h3>
+            <canvas id="weeklyScreenTimeChart"></canvas>
+        </div>
+
+        <div class="suggested-questions">
+            <h4>Try asking me about:</h4>
+            <ul id="suggestedQuestionsList">
+                <li><button onclick="askSuggestedQuestion('How can I reduce my phone usage before bed?')">Phone usage before bed</button></li>
+                <li><button onclick="askSuggestedQuestion('What are some benefits of a digital detox?')">Benefits of digital detox</button></li>
+                <li><button onclick="askSuggestedQuestion('Suggest some activities to do instead of using my phone.')">Alternatives to phone use</button></li>
+                <li><button onclick="askSuggestedQuestion('How can I manage social media usage?')">Managing social media</button></li>
+                <li><button onclick="askSuggestedQuestion('What are some signs of digital addiction?')">Signs of digital addiction</button></li>
+                <li><button onclick="askSuggestedQuestion('How to set healthy screen time limits?')">Setting screen time limits</button></li>
+                <li><button onclick="askSuggestedQuestion('Show me my weekly screen time.')">Show weekly screen time</button></li>
+            </ul>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 AI Digital Detox Assistant</p>
+    </footer>
+
+    <script>
+        let conversationHistory = [];
+        const suggestedQuestionsList = document.getElementById('suggestedQuestionsList');
+        const userInput = document.getElementById('userInput');
+        const responseDiv = document.getElementById('response');
+
+        // Screen time tracking variables
+        let startTime = null;
+        let screenTime = 0;
+        let dailyScreenTime = 0;
+        let screenTimeInterval;
+        let screenTimeLimit = parseInt(localStorage.getItem('screenTimeLimit')) || 60; // Default to 60 minutes
+        const setLimitInput = document.getElementById('setLimit');
+        const setLimitBtn = document.getElementById('setLimitBtn');
+        const limitReminder = document.getElementById('limitReminder');
+        const screenTimeDisplay = document.getElementById('screenTimeDisplay');
+
+        // Weekly screen time data (for demonstration, this will reset on page load)
+        let weeklyScreenTime = JSON.parse(localStorage.getItem('weeklyScreenTime')) || Array(7).fill(0);
+        const weeklyChartCanvas = document.getElementById('weeklyChartCanvas');
+        let weeklyScreenTimeChart;
+        const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+        // Function to update screen time display
+        function updateScreenTimeDisplay() {
+            const minutes = Math.floor(dailyScreenTime / 60);
+            const seconds = dailyScreenTime % 60;
+            screenTimeDisplay.textContent = `${minutes} minutes ${seconds} seconds`;
+
+            if (dailyScreenTime >= screenTimeLimit * 60 && screenTimeLimit > 0) {
+                limitReminder.style.display = 'block';
+                clearInterval(screenTimeInterval);
+            } else {
+                limitReminder.style.display = 'none';
+            }
+        }
+
+        // Function to start screen time tracking
+        function startTracking() {
+            if (!startTime) {
+                startTime = new Date();
+                screenTimeInterval = setInterval(() => {
+                    const now = new Date();
+                    const elapsedSeconds = Math.floor((now - startTime) / 1000);
+                    dailyScreenTime = (parseInt(localStorage.getItem('dailyScreenTime')) || 0) + elapsedSeconds;
+                    localStorage.setItem('dailyScreenTime', dailyScreenTime);
+                    updateScreenTimeDisplay();
+                    startTime = now; // Reset start time for the next interval
+                }, 1000);
+            }
+        }
+
+        // Function to stop screen time tracking (not explicitly used in this basic example)
+        function stopTracking() {
+            clearInterval(screenTimeInterval);
+            startTime = null;
+        }
+
+        // Event listener for setting screen time limit
+        setLimitInput.value = screenTimeLimit;
+        setLimitBtn.addEventListener('click', () => {
+            const newLimit = parseInt(setLimitInput.value);
+            if (!isNaN(newLimit) && newLimit > 0) {
+                screenTimeLimit = newLimit;
+                localStorage.setItem('screenTimeLimit', screenTimeLimit);
+                if (dailyScreenTime >= screenTimeLimit * 60) {
+                    limitReminder.style.display = 'block';
+                    clearInterval(screenTimeInterval);
+                } else {
+                    limitReminder.style.display = 'none';
+                    if (!startTime) {
+                        startTracking(); // Restart tracking if limit was increased
+                    }
+                }
+            } else {
+                alert('Please enter a valid positive number for the screen time limit.');
+                setLimitInput.value = screenTimeLimit; // Revert to previous valid limit
+            }
+        });
+
+        // Initialize screen time tracking on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            dailyScreenTime = parseInt(localStorage.getItem('dailyScreenTime')) || 0;
+            updateScreenTimeDisplay();
+            startTracking();
+            renderWeeklyChart();
+        });
+
+        // Reset daily screen time at the beginning of each day (basic implementation)
+        function resetDailyScreenTime() {
+            const lastReset = localStorage.getItem('lastReset');
+            const today = new Date().toDateString();
+            if (lastReset !== today) {
+                const now = new Date();
+                const dayOfWeek = now.getDay(); // 0 for Sunday, 6 for Saturday
+                weeklyScreenTime[dayOfWeek] = Math.floor((parseInt(localStorage.getItem('dailyScreenTime')) || 0) / 60); // Store in minutes
+                localStorage.setItem('weeklyScreenTime', JSON.stringify(weeklyScreenTime));
+                localStorage.setItem('dailyScreenTime', 0);
+                localStorage.setItem('lastReset', today);
+                dailyScreenTime = 0;
+                updateScreenTimeDisplay();
+                renderWeeklyChart();
+                startTracking(); // Restart tracking for the new day
+            }
+        }
+        resetDailyScreenTime();
+
+        function askSuggestedQuestion(question) {
+            userInput.value = question;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            const input = userInput.value;
+
+            if (!input) {
+                responseDiv.innerHTML = 'Please enter your question or choose a suggestion.';
+                return;
+            }
+
+            if (input.toLowerCase().includes('show weekly screen time')) {
+                weeklyChartCanvas.style.display = 'block';
+                responseDiv.innerHTML = '';
+                return;
+            } else {
+                weeklyChartCanvas.style.display = 'none';
+            }
+
+            responseDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            conversationHistory.push({ role: 'user', content: input });
+
+            const messages = [
+                {
+                    role: 'system',
+                    content:
+                        'You are a helpful and friendly AI assistant specializing in providing information and tips related to digital detox and reducing screen time. Answer questions on these topics in an informative and engaging way. If asked about other topics, you can still provide a general helpful response.',
+                },
+                ...conversationHistory.map((message) => ({
+                    role: message.role,
+                    content: message.content,
+                })),
+            ];
+
+            try {
+                const response = await fetch(
+                    'https://openrouter.ai/api/v1/chat/completions',
+                    {
+                        method: 'POST',
+                        headers: {
+                            Authorization:
+                                'Bearer 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',
+                            'HTTP-Referer': 'https://www.sitename.com',
+                            'X-Title': 'AIDigitalDetox',
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            model: 'google/gemini-pro',
+                            messages: messages,
+                        }),
+                    }
+                );
+
+                const data = await response.json();
+                console.log(data);
+
+                const aiResponse =
+                    data.choices?.[0]?.message?.content ||
+                    'No response received.';
+
+                responseDiv.innerHTML = marked.parse(aiResponse);
+                conversationHistory.push({
+                    role: 'assistant',
+                    content: aiResponse,
+                });
+
+            } catch (error) {
+                responseDiv.innerHTML = 'Error: ' + error.message;
+            } finally {
+                // Re-enable the button or update loading state if needed
+            }
+        }
+
+        function renderWeeklyChart() {
+            const ctx = document.getElementById('weeklyScreenTimeChart').getContext('2d');
+
+            if (weeklyScreenTimeChart) {
+                weeklyScreenTimeChart.destroy();
+            }
+
+            weeklyScreenTimeChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: daysOfWeek,
+                    datasets: [{
+                        label: 'Screen Time (minutes)',
+                        data: weeklyScreenTime,
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Minutes'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Day of the Week'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false,
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y} minutes`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
